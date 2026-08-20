@@ -1,10 +1,15 @@
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 import json
+from logger import logger
 
-model=ChatOllama(model="qwen2.5:7b",
-                top_p=0.3,
-                temperature=0.5)
+model = ChatOllama(
+    model="qwen2.5:7b",
+    top_p=0.2,
+    temperature=0.3,
+    num_thread=8,      # sesuaikan jumlah core CPU kamu
+    num_ctx=2048,      # jangan set ctx lebih besar dari yang perlu — makin besar makin lambat
+)
 
 
 daftar_action=[
@@ -51,4 +56,5 @@ def planner(user_prompt):
     chain=prompt|model
     result=chain.invoke({"user_prompt":user_prompt,"daftar_action":daftar_action})
     plan=json.loads(result.content)
+    logger.info(f"PLAN:\n{plan['steps']}")
     return plan['steps']
