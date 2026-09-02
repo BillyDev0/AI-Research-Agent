@@ -1,8 +1,7 @@
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from AGENT.planner import planner
-from TOOLS.web_search import web_search
-from AGENT.evaluator import agent_loop,executor
+from AGENT.evaluator import executor,agent_loop
 from AGENT.extractor import extractor
 from logger import logger
 import asyncio
@@ -15,70 +14,56 @@ model = ChatOllama(
     num_ctx=2048,      # jangan set ctx lebih besar dari yang perlu — makin besar makin lambat
 )
 
-jawaban=["""HP A memiliki harga Rp3.000.000 dan RAM 8GB.
-HP B memiliki harga Rp4.000.000 dan RAM 12GB."""]
+template="""
+# ROLE
+Kamu adalah Presenter Agent. Tugasmu HANYA menyusun ulang data yang sudah ada menjadi jawaban untuk user. Kamu TIDAK mencari data baru dan TIDAK menambahkan informasi apa pun di luar data yang diberikan.
+
+# ATURAN
+1. HANYA gunakan informasi dari EXECUTION_RESULTS. DILARANG menambahkan fakta, angka, atau klaim yang tidak ada di dalamnya — walau kamu tahu jawabannya dari pengetahuan sendiri.
+2. Jika ada bagian goal yang tidak terjawab oleh EXECUTION_RESULTS, katakan terus terang bahwa informasinya tidak ditemukan. Jangan menebak.
+3. Sertakan sumber jika tersedia di data.
+4. Jawaban mengikuti bahasa yang user gunakan.
+5. Susun jawaban dengan rapi (poin/tabel/paragraf singkat) sesuai bentuk data.
+
+GOAL_USER:
+{goal_user}
+
+EXECUTION_RESULTS:
+{result}
+
+# OUTPUT
+Tulis jawaban akhir untuk user berdasarkan EXECUTION_RESULTS di atas, tanpa menambah data apa pun.
+"""
+
+mapping_tools=[
+    
+    {
+        "name":"web_search",
+        "descriptions":"tools ini digunakan jika ingin mencari/search informasi di internet"
+    }
+]
+
 async def tanya_AI(user_prompt):
-    # plan=planner(user_prompt)
+    plan=planner(user_prompt,mapping_tools)
+    logger.info(f"RESULT PLANNER: {plan}")
 
-    # jawaban,riwayat_query=executor(plan)
-    # logger.info(f"HASIL SEARCH: {jawaban}")
+    executor_result,goal_user,riwayat_query=executor(plan)
+    logger.info(f"RESULT EXECUTOR: {executor_result}")
 
-    evaluator=agent_loop(user_prompt,jawaban)
-    logger.info(f"HASIL EVALUATOR: {evaluator}")
-  
-    # result_final=extractor(user_prompt,evaluator)
-    template="""
-Kamu adalah AI yang bertugas menyusun jawaban akhir berdasarkan data hasil pencarian.
-
-ATURAN WAJIB:
-
-1. Jawab HANYA permintaan yang ditulis oleh user.
-2. Jangan membuat pertanyaan baru.
-3. Jangan membuat sub-pertanyaan yang tidak diminta user.
-4. Jangan memberikan rekomendasi tambahan yang tidak diminta.
-5. Jangan menggunakan pengetahuan dari luar DATA.
-6. Jangan mengarang informasi yang tidak terdapat dalam DATA.
-7. Jika suatu informasi tidak tersedia dalam DATA, tulis "Data tidak tersedia".
-8. Gunakan hanya data yang relevan dengan kebutuhan user.
-9. Jangan menampilkan data yang tidak berhubungan dengan pertanyaan user.
-10. Jika user meminta perbandingan, buat perbandingan yang langsung sesuai dengan kriteria yang diminta.
-11. Jika user meminta 3 item, tampilkan tepat 3 item.
-12. Jika user meminta sumber, sertakan sumber yang tersedia di DATA.
-
-Jika data mengandung LEBIH BANYAK item daripada jumlah_item yang diminta:
-1. Jangan langsung ambil N item pertama secara acak.
-2. Rangking semua item kandidat berdasarkan relevansi dengan kriteria user
-   (contoh: kalau user prioritaskan "performa", urutkan berdasarkan itu).
-3. Ambil TOP jumlah_item saja.
-4. Item yang tidak terpilih TIDAK ditampilkan sama sekali di final_answer,
-   termasuk tidak disebut sebagai "opsi tambahan" atau "bonus".
-
-KEBUTUHAN USER:
-{user_prompt}
-
-DATA HASIL PENCARIAN:
-{result_tools}
-
-TUGAS:
-
-Buat jawaban langsung untuk kebutuhan user.
-
-Jangan menjelaskan proses pencarian.
-Jangan menjelaskan proses berpikir.
-Jangan membuat pertanyaan baru.
-
-Jawaban:"""
-
+    evaluator_result=agent_loop(executor_result,goal_user,riwayat_query,mapping_tools)
+    logger.info(f"RESULT EVALUATOR: {evaluator_result}")
+    
     try:
         prompt=ChatPromptTemplate.from_template(template)
         chain=prompt|model
-        for chunk in chain.stream({"user_prompt":user_prompt, "result_tools":evaluator}):
+        for chunk in chain.stream({"goal_user":goal_user,"result":evaluator_result}):
             print(chunk.content, end="", flush=True)
+            await asyncio.sleep(0.05)
                 
         print()
            
     except Exception as e:
         logger.exception(e)
-        
-prompt=input("masukan prompt: ")
+
+prompt=input("prompt: ")
 asyncio.run(tanya_AI(prompt))

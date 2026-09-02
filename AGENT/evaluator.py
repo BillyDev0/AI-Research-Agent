@@ -2,10 +2,9 @@ from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from TOOLS.web_search import web_search
 from logger import logger
-import json
-from pydantic import BaseModel
+from AGENT.planner import planner
 from typing import Literal
-
+from pydantic import BaseModel
 
 model = ChatOllama(
     model="qwen2.5:7b",
@@ -15,126 +14,114 @@ model = ChatOllama(
     num_ctx=2048,      # jangan set ctx lebih besar dari yang perlu — makin besar makin lambat
 )
 
-class EvaluatorOutput(BaseModel):
-    keputusan:Literal["final","web_search"]
+class Scema_output(BaseModel):
+    status:Literal["complete","incomplete"]
+    tools:Literal["web_search",""]
     query:str
 
-structured_output=model.with_structured_output(EvaluatorOutput)
-
-daftar_tools=[
-
-    {
-        "action":"web_search",
-        "description":"Mencari informasi terkini di internet, gunakan untuk pertanyaan yang butuh data baru/real-time"
-    },
-
-]
+structured_output=model.with_structured_output(Scema_output)
 
 template = """
-Kamu adalah Data Completeness Checker.
+# ROLE
+Kamu adalah Gap-Checker Agent. Tugasmu HANYA mengecek apakah data sudah cukup untuk menjawab GOAL_USER.
 
-Tugasmu HANYA menentukan apakah semua informasi yang diminta USER sudah tersedia di DATA.
+GOAL_USER:
+{goal_user}
 
-USER:
-{user_prompt}
-
-DATA:
-{data_jawaban}
-
-RIWAYAT QUERY:
+RIWAYAT_QUERY:
 {riwayat_query}
 
-Ikuti langkah berikut:
+DAFTAR_TOOLS:
+{daftar_tools}
 
-1. Baca USER.
-2. Buat daftar semua informasi yang secara eksplisit diminta USER.
-3. Untuk SETIAP informasi tersebut, cari apakah informasinya tersedia di DATA.
-4. Jika SATU SAJA informasi yang diminta tidak tersedia, keputusan HARUS "web_search".
-5. Jika SEMUA informasi tersedia, keputusan "final".
-6. Jangan menilai kualitas, kedalaman, confidence, atau relevansi. Fokus HANYA pada kelengkapan data.
-7. Jangan menggunakan pengetahuan dari luar DATA.
-8. Jika informasi tidak disebutkan secara eksplisit di DATA, anggap informasi tersebut BELUM TERSEDIA.
-9. Jika keputusan "web_search", query harus menyebutkan informasi yang belum tersedia.
-10. Jika keputusan "final", query harus "".
+DATA_INFORMASI (data yang sudah terkumpul):
+{jawaban}
 
-## ENTITY-FIELD CHECK
+# PRINSIP UTAMA: DEFAULT KE "complete"
+Anggap status "complete" secara default, KECUALI ada alasan jelas dan spesifik untuk memilih "incomplete". Goal dianggap terjawab kalau intinya sudah kejawab, walau ada detail kecil yang belum sempurna.
 
-Cek setiap kombinasi entitas dan field yang diminta user.
+JANGAN pilih "incomplete" hanya karena:
+- Data terasa "bisa lebih detail" atau "bisa lebih lengkap".
+- Kamu ingin menambah informasi yang TIDAK diminta di GOAL_USER.
+- Suatu data sudah pernah dicari di RIWAYAT_QUERY tapi hasilnya memang tidak ketemu (anggap itu "tidak tersedia", BUKAN alasan untuk terus mencoba lagi).
 
-Contoh:
-User: "Bandingkan HP A dan HP B dari harga, RAM, dan baterai."
+Hanya pilih "incomplete" jika: ada entitas/aspek yang SECARA EKSPLISIT disebut di GOAL_USER, datanya BENAR-BENAR TIDAK ADA SAMA SEKALI di DATA_INFORMASI, DAN belum pernah dicoba dicari di RIWAYAT_QUERY.
 
-Wajib ada:
-HP A → harga, RAM, baterai
-HP B → harga, RAM, baterai
+#ALUR KERJA:
+1. Cek DATA_INFORMASI terhadap PRINSIP UTAMA di atas.
+2. Jika sudah memenuhi (default), isi field "status" dengan "complete", isi field lainnya seperti ini ("tools":"", "query":"").
+3. Jika benar-benar belum memenuhi (sesuai syarat ketat di atas) -> isi field "status" dengan "incomplete", buat query untuk mencari SATU data yang belum ada, harus berhubungan langsung dengan GOAL_USER dan tidak boleh keluar dari context yang dibahas.
+4. Field "tools" gunakan sesuai fungsinya yang ada di DAFTAR_TOOLS.
 
-Informasi baterai dari HP lain tidak memenuhi kebutuhan HP A atau HP B.
+#KETENTUAN QUERY:
+1. Query tidak boleh keluar dari konteks GOAL_USER.
+2. Query HANYA boleh menyebut entitas yang PERSIS SAMA seperti tertulis di GOAL_USER — dilarang mengganti/menambah entitas lain (contoh: GOAL_USER sebut "iPhone 14 Pro" -> query tidak boleh jadi "iPhone 15" atau entitas lain).
+3. Query hanya boleh mencari satu entitas+aspek secara spesifik seperti ("harga hp poco m6 pro", "chipset hp iPhone 14 pro", dll).
+4. Query tidak boleh lebih dari 10 kata.
+5. Query TIDAK BOLEH sama atau semirip makna dengan salah satu yang ada di RIWAYAT_QUERY.
 
-Jika ada satu saja kombinasi yang belum tersedia → "web_search".
-Jika semua tersedia → "final".
+# STATUS ITERASI
+Sudah dilakukan {jumlah_iterasi_sekarang} kali pencarian dari maksimal {batas_iterasi} kali.
+- Jika sudah lewat separuh batas_iterasi, jadilah LEBIH KETAT dalam memilih "incomplete".
+- Jika sudah mendekati batas_iterasi (sisa 1-2 kali), WAJIB isi status "complete" apa pun kondisinya.
 
-
-## SEARCH HISTORY
-
-SEARCH_HISTORY berisi query yang sudah pernah digunakan.
-
-Jangan gunakan kembali query yang sama atau memiliki makna yang sama.
-
-Jika data masih belum lengkap:
-- buat query baru yang berbeda dari {riwayat_query}
-- query baru harus lebih spesifik terhadap data yang masih kurang
-
-OUTPUT:
+# FORMAT OUTPUT (WAJIB, JSON, TANPA TEKS LAIN)
 {{
-  "keputusan": "final" atau "web_search",
-  "query": "..."
+    "status": "...",
+    "tools": "...",
+    "query": "..."
 }}
-
-
 """
 
 def executor(plan):
-    logger.info(plan)
-
     jawaban=[]
-    query=[]
-    for step in plan:
-        if "web_search" in step['action']:
-            results=web_search(step['query'])
-            query.append(step['query'])
+    goal_user=plan['goal']
+    steps=plan['steps']
+    riwayat_query=[]
 
-            for result in results:
-                jawaban.append(result['content'])
+    for data in steps:
+        tools=data['tools']
+        query=data['query']
+        if "web_search" in tools:
+            result=web_search(query)
+            riwayat_query.append(query)
+            
+            [jawaban.append(results['content']) for results in result] 
 
-    return jawaban,query
+    return jawaban,goal_user,riwayat_query
 
-def agent_loop(user_prompt,data_jawaban):
+def agent_loop(jawaban,goal_user,riwayat_query,mapping_tools,max_iterasi=6):
     prompt=ChatPromptTemplate.from_template(template)
     chain=prompt|structured_output
 
-    riwayat_query=[]
-    max_iteration=4
-    while True:
-        for iteration in range(max_iteration):
-            keputusan=chain.invoke({"user_prompt":user_prompt,"data_jawaban":data_jawaban,"riwayat_query":riwayat_query})
-            logger.info(f"KEPUTUSAN: {keputusan}")
+    jumlah_iterasi=0
+    for i in range(max_iterasi):
+        result=chain.invoke({"goal_user":goal_user,
+                             "riwayat_query":riwayat_query,
+                             "daftar_tools":mapping_tools,
+                             "jawaban":jawaban,
+                             "jumlah_iterasi_sekarang":jumlah_iterasi,
+                             "batas_iterasi":max_iterasi})
+        jumlah_iterasi+=1
+        status=result.status
+        tools=result.tools
+        query=result.query
+        logger.info(f"RESULT ITERASI: {result}")
 
-            action=keputusan.keputusan
-            query=keputusan.query
+        if status=="complete":
+            break
 
-            if action == "web_search":
-                results=web_search(query)
+        elif status == "incomplete":
+
+            if tools=="web_search":
+                result=web_search(query)
+                [jawaban.append(results['content']) for results in result]    
                 riwayat_query.append(query)
-                
-                for result in results:
-                    data_jawaban.append(result['content'])
+                logger.info(f"Query: {query}")
 
-            elif action == "final":
-                break
+        else:
+            continue
 
-            else:
-                continue
+    return jawaban
 
 
-        return data_jawaban
-    

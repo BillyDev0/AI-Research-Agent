@@ -9,7 +9,7 @@ def web_search(query):
 
     response=client.search(
         query=query,
-        max_results=5,
+        max_results=4,
         search_depth="basic"
     )
 
