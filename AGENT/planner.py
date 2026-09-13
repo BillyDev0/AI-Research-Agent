@@ -26,16 +26,40 @@ GOAL_USER/USER_PROMPT:
 TOOLS_TERSEDIA:
 {available_tools}
 
-# CARA BERPIKIR: DEKOMPOSISI STEP (WAJIB DIIKUTI SECARA INTERNAL)
-1. Susun dulu langkah-langkah besar (high-level) untuk mencapai goal.
-2. Untuk SETIAP langkah besar, cek:
-   - Apakah menyebut 2+ objek/entitas (mis. "iPhone 14 dan iPhone 15")? → pecah jadi 1 step per objek.
-   - Apakah mengandung 2+ kata kerja aksi (mis. "cari dan bandingkan")? → pecah jadi step terpisah per kata kerja.
-   - Apakah mengandung syarat/kondisi (mis. "jika tidak ada, cari alternatif")? → pecah jadi step kondisional terpisah.
-   - Apakah masih terasa seperti "tugas", bukan "aksi tunggal"? → pecah lagi.
-3. Ulangi sampai setiap step benar-benar atomic (tidak bisa dipecah lagi tanpa kehilangan makna).
-4. Untuk setiap step atomic, tentukan tool yang paling sesuai dari TOOLS_TERSEDIA, lalu tulis query/instruksi spesifik untuk tool tersebut.
-5. Hanya step hasil akhir dekomposisi yang dimasukkan ke output — JANGAN tampilkan langkah besar (high-level) di output final.
+# CARA BERPIKIR (WAJIB DIIKUTI SECARA INTERNAL)
+
+1. ANALISA KEBUTUHAN GOAL
+   Baca goal, pisahkan jadi 3 hal:
+   - Entitas/topik utama yang diminta (jika ADA disebut eksplisit di goal)
+   - Syarat/batasan (wilayah, waktu, kategori, jumlah, kondisi, dll)
+   - Jenis data yang diminta per entitas (harga, ketinggian, chipset, dll)
+
+2. FILTER SYARAT (baca aturan dari goal)
+   Catat semua syarat dari langkah 1 sebagai "aturan wajib" yang harus dipenuhi entitas apa pun yang akan dicari.
+
+3. VALIDASI ENTITAS SEBELUM DIPAKAI
+   - Jika goal menyebut entitas SPESIFIK secara eksplisit → boleh langsung dipakai.
+   - Jika goal minta DAFTAR/RANKING (top-N, terbaik, dst) dan kamu BELUM PUNYA data pastinya → JANGAN menyebut nama entitas dari ingatan/pengetahuan sendiri sama sekali. Buat HANYA 1 step untuk mencari daftarnya dulu (entitas detail dicari di iterasi berikutnya, setelah nama-namanya diketahui dari hasil pencarian nyata).
+   - Jika kamu (secara internal) berpikir untuk menyebut entitas dari pengetahuan umum, WAJIB cek dulu: apakah entitas itu 100% memenuhi SEMUA syarat di langkah 2? Jika tidak yakin atau ternyata tidak memenuhi, buang — jangan dipakai.
+
+4. DEKOMPOSISI JADI STEP ATOMIC
+   Untuk entitas yang sudah lolos validasi:
+   - Jika ada 2+ entitas → 1 step per entitas.
+   - Jika ada 2+ jenis data yang diminta per entitas → 1 step per jenis data.
+   - Satu step = satu entitas + satu jenis data. Jangan gabungkan.
+
+5. SELF-CHECK SEBELUM OUTPUT
+   Sebelum finalisasi, cek ulang tiap step: apakah entitas di step ini benar-benar memenuhi syarat di langkah 2? Apakah entitas ini murni tebakan tanpa data pasti? Jika ya, hapus step itu dari output.
+
+# PEMILIHAN TOOLS
+
+Pilih tool berdasarkan deskripsi tool dan kebutuhan setiap step.
+
+- Gunakan tool yang sumber datanya paling sesuai dengan informasi yang diminta.
+- Jangan memilih tool hanya berdasarkan nama.
+- Jika informasi yang diminta berasal dari dokumen internal, gunakan tool yang menyediakan akses ke dokumen internal.
+- Jika informasi membutuhkan internet, gunakan tool yang menyediakan pencarian internet.
+- Jangan membuat nama tool baru.
 
 # ATURAN WAJIB UNTUK QUERY
 1. SATU STEP = SATU AKSI, SATU OBJEK, TANPA SYARAT GANDA.
@@ -43,26 +67,16 @@ TOOLS_TERSEDIA:
    - BENAR: "Cari harga iPhone 15 128GB"
    - SALAH: "Mencari tahu berapa harga iPhone 15 karena user ingin membandingkan dengan iPhone 14"
 3. DILARANG kata sambung penggabung aksi dalam satu query: "kemudian", "lalu", "dan", "setelah itu", "berdasarkan", "untuk", "sehingga", "karena", "yang mencakup".
-4. DILARANG menulis rumus/kode/ekspresi matematis di dalam query — tulis dalam bahasa natural.
-5. DILARANG menyisipkan alasan/reasoning/justifikasi di dalam query.
-6. DILARANG step berisi kata kerja analisis/kesimpulan (Bandingkan, Analisis, Simpulkan, Tentukan mana yang terbaik) — Planner berhenti di tahap pengumpulan data/aksi, bukan analisis akhir.
-7. Maksimal panjang tiap query: 10 kata.
-8. Step harus berurutan logis (step sebelumnya mendukung step berikutnya).
-9. Jika goal ambigu, buat asumsi wajar secara internal (jangan ditulis di query) lalu lanjutkan dekomposisi.
-10. Gunakan bahasa yang sama dengan bahasa user.
-11. Jangan menyertakan step yang tidak perlu — plan harus padat dan efisien.
-12. JANGAN membuat step dari instruksi yang sebenarnya soal FORMAT/CARA MENYAJIKAN hasil (misal "sertakan sumber", "jelaskan secara detail", "urutkan berdasarkan rating"). Instruksi semacam ini BUKAN aksi pencarian, jadi TIDAK dijadikan step tersendiri — cukup diabaikan dari daftar steps.
+4. DILARANG menyisipkan alasan/reasoning/justifikasi di dalam query.
+5. DILARANG step berisi kata kerja analisis/kesimpulan (Bandingkan, Analisis, Simpulkan, Tentukan mana yang terbaik) — Planner berhenti di tahap pengumpulan data/aksi, bukan analisis akhir.
+6. Maksimal panjang tiap query: 10 kata.
+7. Step harus berurutan logis (step sebelumnya mendukung step berikutnya).
+8. Jika goal ambigu, buat asumsi wajar secara internal (jangan ditulis di query) lalu lanjutkan dekomposisi.
+9. Gunakan bahasa yang sama dengan bahasa user.
+10. Jangan menyertakan step yang tidak perlu — plan harus padat dan efisien.
+11. JANGAN membuat step dari instruksi yang sebenarnya soal FORMAT/CARA MENYAJIKAN hasil (misal "sertakan sumber", "jelaskan secara detail", "urutkan berdasarkan rating"). Instruksi semacam ini BUKAN aksi pencarian, jadi TIDAK dijadikan step tersendiri — cukup diabaikan dari daftar steps.
 
-# CONTOH
-Goal: "Bandingkan spesifikasi iPhone 14 dan iPhone 15 berdasarkan fitur utama dan harga"
 
-Output:
-[
-  {{"tools": "web_search", "query": "Cari fitur utama iPhone 14"}},
-  {{"tools": "web_search", "query": "Cari fitur utama iPhone 15"}},
-  {{"tools": "web_search", "query": "Cari harga iPhone 14"}},
-  {{"tools": "web_search", "query": "Cari harga iPhone 15"}}
-]
 
 # INPUT YANG DITERIMA
 - goal: tujuan utama yang ingin dicapai user

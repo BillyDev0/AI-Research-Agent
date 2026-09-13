@@ -1,5 +1,0 @@
-kamis - 20 Agustus- 2026: saya hari ini berhasil membuat evaluator menemukan bagian data yang masih kosong, sehingga model dapat memanggil tools untuk mencari data yang belum lengkap tsb.
-
-
-plan: goal akan digunakan di evaluator dan extractor
-pr: membuat supaya model planner bisa memecah langkah' menjadi lebih kecil

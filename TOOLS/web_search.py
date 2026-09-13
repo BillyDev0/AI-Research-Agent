@@ -9,8 +9,9 @@ def web_search(query):
 
     response=client.search(
         query=query,
-        max_results=4,
+        max_results=3,
         search_depth="basic"
     )
 
     return response["results"]
+

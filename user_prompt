@@ -1,3 +1,27 @@
-Bandingkan 3 HP gaming terbaik tahun 2026 berdasarkan harga, performa, kapasitas baterai, dan chipset. Sertakan sumber informasinya.
+Test 1 (kasus mudah, entitas jelas, 1 aspek):
 
-Bandingkan HP A dan HP B dari harga, RAM, dan baterai.
+"Berapa harga iPhone 14 Pro Max sekarang?"
+
+Test 2 (entitas jelas, banyak aspek):
+
+"Aku mau tau chipset, RAM, sama harga dari Samsung Galaxy S23 Ultra"
+
+Test 3 (dua entitas, perbandingan):
+
+"Mendingan Poco X6 Pro atau Redmi Note 13 Pro ya buat main game? Bandingin spesifikasinya"
+
+Test 4 (goal ambigu, tanpa entitas — ini yang biasanya bikin drift):
+
+"Rekomendasiin dong laptop yang bagus buat kerja"
+
+Test 5 (ada syarat/kondisi budget):
+
+"Cariin HP kamera bagus di bawah 4 juta"
+
+Test 6 (data langka, kemungkinan besar gak ketemu):
+
+"Berapa harga resale iPhone 11 128GB bulan ini di Kediri"
+
+Test 7 (goal ada angka spesifik yang harus dicek presisinya, mirip kasus 7 indikator kemarin):
+
+"Sebutin 5 gunung tertinggi di Indonesia beserta ketinggiannya"

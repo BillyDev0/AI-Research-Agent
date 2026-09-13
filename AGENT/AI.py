@@ -21,7 +21,7 @@ Kamu adalah Presenter Agent. Tugasmu HANYA menyusun ulang data yang sudah ada me
 # ATURAN
 1. HANYA gunakan informasi dari EXECUTION_RESULTS. DILARANG menambahkan fakta, angka, atau klaim yang tidak ada di dalamnya — walau kamu tahu jawabannya dari pengetahuan sendiri.
 2. Jika ada bagian goal yang tidak terjawab oleh EXECUTION_RESULTS, katakan terus terang bahwa informasinya tidak ditemukan. Jangan menebak.
-3. Sertakan sumber jika tersedia di data.
+3. Sertakan sumber jika tersedia di data (jika tidak tersedia maka tidak usah diperdulikan).
 4. Jawaban mengikuti bahasa yang user gunakan.
 5. Susun jawaban dengan rapi (poin/tabel/paragraf singkat) sesuai bentuk data.
 
@@ -35,11 +35,14 @@ EXECUTION_RESULTS:
 Tulis jawaban akhir untuk user berdasarkan EXECUTION_RESULTS di atas, tanpa menambah data apa pun.
 """
 
-mapping_tools=[
-    
+mapping_tools = [
     {
-        "name":"web_search",
-        "descriptions":"tools ini digunakan jika ingin mencari/search informasi di internet"
+        "name": "web_search",
+        "descriptions": "tools ini digunakan untuk mencari informasi terbaru atau informasi umum yang berasal dari internet"
+    },
+    {
+        "name": "rag_search",
+        "descriptions": "tools ini digunakan untuk mencari informasi dari data internal TokoPro, termasuk produk, stok, transaksi penjualan, pelanggan, laporan, akun pengguna, paket layanan, aturan sistem, dan masalah umum TokoPro"
     }
 ]
 
@@ -52,16 +55,20 @@ async def tanya_AI(user_prompt):
 
     evaluator_result=agent_loop(executor_result,goal_user,riwayat_query,mapping_tools)
     logger.info(f"RESULT EVALUATOR: {evaluator_result}")
-    
+
+    extractor_result=extractor(goal_user,evaluator_result)
+    logger.info(f"RESULT EXTRACTOR: {extractor_result}")
+    hasil=""
     try:
         prompt=ChatPromptTemplate.from_template(template)
         chain=prompt|model
-        for chunk in chain.stream({"goal_user":goal_user,"result":evaluator_result}):
+        for chunk in chain.stream({"goal_user":goal_user,"result":extractor_result}):
+            hasil += chunk.content
             print(chunk.content, end="", flush=True)
             await asyncio.sleep(0.05)
                 
         print()
-           
+        logger.info(f"OUTPUT AKHIR: {hasil}")
     except Exception as e:
         logger.exception(e)
 

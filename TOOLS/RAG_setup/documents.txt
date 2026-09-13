@@ -1,0 +1,257 @@
+# DATA PENGETAHUAN - TOKOPRO
+
+## 1. Tentang TokoPro
+
+TokoPro adalah aplikasi manajemen toko yang digunakan untuk mengelola produk, stok, transaksi penjualan, pelanggan, dan laporan keuangan sederhana.
+
+TokoPro ditujukan untuk toko kecil dan menengah yang ingin menggantikan pencatatan manual menggunakan buku atau spreadsheet.
+
+TokoPro memiliki fitur utama:
+- Manajemen produk
+- Manajemen stok
+- Pencatatan transaksi
+- Manajemen pelanggan
+- Laporan penjualan
+- Laporan stok
+- Manajemen pengguna
+
+TokoPro dapat digunakan melalui komputer dan perangkat mobile.
+
+
+## 2. Manajemen Produk
+
+Fitur manajemen produk digunakan untuk menambahkan, mengubah, melihat, dan menghapus data produk.
+
+Setiap produk memiliki data:
+- ID produk
+- Nama produk
+- Harga beli
+- Harga jual
+- Jumlah stok
+- Kategori
+- Satuan
+
+Contoh:
+
+Nama produk: Kopi Arabika 250g
+Harga beli: Rp35.000
+Harga jual: Rp50.000
+Stok: 25
+Kategori: Kopi
+Satuan: Bungkus
+
+Produk yang sudah dibuat dapat diubah melalui menu Manajemen Produk.
+
+
+## 3. Manajemen Stok
+
+TokoPro mencatat perubahan stok setiap kali terjadi barang masuk atau barang keluar.
+
+Stok bertambah ketika pengguna mencatat transaksi barang masuk.
+
+Stok berkurang ketika terjadi transaksi penjualan.
+
+TokoPro memberikan status stok berdasarkan jumlah barang:
+- Stok aman: lebih dari 10 unit.
+- Stok menipis: 1-10 unit.
+- Stok habis: 0 unit.
+
+Produk dengan stok 0 tidak dapat digunakan untuk transaksi penjualan.
+
+
+## 4. Transaksi Penjualan
+
+Transaksi penjualan digunakan untuk mencatat barang yang dibeli pelanggan.
+
+Setiap transaksi memiliki:
+- ID transaksi
+- Tanggal transaksi
+- Produk
+- Jumlah barang
+- Harga
+- Total pembayaran
+- Nama pelanggan
+
+Total pembayaran dihitung berdasarkan harga jual produk dikalikan jumlah barang.
+
+Contoh:
+
+Produk: Kopi Arabika 250g
+Harga: Rp50.000
+Jumlah: 2
+
+Total pembayaran:
+Rp50.000 × 2 = Rp100.000
+
+Setelah transaksi berhasil, stok produk akan otomatis berkurang.
+
+
+## 5. Data Pelanggan
+
+TokoPro menyediakan fitur untuk menyimpan data pelanggan.
+
+Data pelanggan terdiri dari:
+- ID pelanggan
+- Nama pelanggan
+- Nomor telepon
+- Alamat
+- Riwayat transaksi
+
+Data pelanggan digunakan untuk melihat riwayat pembelian.
+
+Pengguna dapat mencari pelanggan berdasarkan nama atau ID pelanggan.
+
+
+## 6. Laporan Penjualan
+
+Laporan penjualan digunakan untuk melihat aktivitas penjualan toko.
+
+Laporan dapat menampilkan:
+- Jumlah transaksi
+- Total pendapatan
+- Produk paling banyak terjual
+- Produk paling sedikit terjual
+- Penjualan berdasarkan tanggal
+
+Pengguna dapat melihat laporan berdasarkan periode tertentu, seperti harian, mingguan, atau bulanan.
+
+
+## 7. Laporan Stok
+
+Laporan stok menampilkan kondisi persediaan produk.
+
+Informasi yang ditampilkan:
+- Nama produk
+- Kategori
+- Jumlah stok
+- Harga beli
+- Harga jual
+- Status stok
+
+Produk dengan status "Stok menipis" perlu segera diperiksa agar tidak kehabisan.
+
+
+## 8. Akun Pengguna
+
+TokoPro memiliki tiga jenis pengguna:
+
+### Admin
+
+Admin memiliki akses penuh terhadap sistem.
+
+Admin dapat:
+- Mengelola produk
+- Mengelola stok
+- Melihat transaksi
+- Mengelola pelanggan
+- Melihat laporan
+- Mengelola akun pengguna
+
+### Kasir
+
+Kasir dapat:
+- Melihat produk
+- Membuat transaksi penjualan
+- Melihat data pelanggan
+
+Kasir tidak dapat menghapus produk atau mengelola akun pengguna.
+
+### Owner
+
+Owner dapat:
+- Melihat transaksi
+- Melihat laporan penjualan
+- Melihat laporan stok
+
+Owner tidak dapat mengubah data produk.
+
+
+## 9. Paket TokoPro
+
+TokoPro memiliki tiga paket layanan.
+
+### Paket Basic
+
+Harga:
+Rp50.000 per bulan.
+
+Fitur:
+- Maksimal 500 produk
+- 2 akun pengguna
+- Manajemen produk
+- Manajemen stok
+- Transaksi penjualan
+
+### Paket Pro
+
+Harga:
+Rp100.000 per bulan.
+
+Fitur:
+- Maksimal 2.000 produk
+- 10 akun pengguna
+- Semua fitur Basic
+- Laporan penjualan
+- Laporan stok
+- Manajemen pelanggan
+
+### Paket Business
+
+Harga:
+Rp200.000 per bulan.
+
+Fitur:
+- Produk tanpa batas
+- 30 akun pengguna
+- Semua fitur Pro
+- Laporan lanjutan
+- Multi-user
+- Dukungan prioritas
+
+
+## 10. Aturan Sistem
+
+Setiap akun hanya dapat melakukan tindakan sesuai dengan role yang dimiliki.
+
+Kasir tidak dapat menghapus produk.
+
+Owner tidak dapat mengubah data produk.
+
+Produk tidak dapat dijual jika stoknya 0.
+
+Setiap transaksi yang berhasil akan mengurangi stok produk secara otomatis.
+
+Data transaksi yang sudah selesai tidak dapat dihapus oleh Kasir.
+
+
+## 11. Masalah Umum
+
+### Stok tidak berubah
+
+Jika stok tidak berubah setelah transaksi, pengguna harus memeriksa apakah transaksi berhasil disimpan.
+
+### Produk tidak dapat dijual
+
+Jika produk tidak dapat dijual, periksa jumlah stok produk.
+
+Produk dengan stok 0 tidak dapat digunakan untuk transaksi.
+
+### Tidak dapat membuat transaksi
+
+Pengguna harus memastikan produk yang dipilih masih tersedia dan jumlah pembelian tidak melebihi stok.
+
+### Tidak dapat mengakses laporan
+
+Fitur laporan hanya tersedia untuk Admin dan Owner.
+
+
+## 12. Kontak Bantuan
+
+Email bantuan:
+support@tokopro.example
+
+Email administrasi:
+admin@tokopro.example
+
+Jam layanan:
+Senin-Jumat, 08.00-17.00 WIB.
