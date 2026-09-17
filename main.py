@@ -10,7 +10,7 @@ client = genai.Client(
 
 ressponse = client.models.generate_content(
     model="gemini-3.1-flash-lite",
-    contents="Jelaskan apa itu RAG secara singkat."
+    # contents="Jelaskan apa itu RAG secara singkat."
 )
 
 print(ressponse.text)

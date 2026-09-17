@@ -15,7 +15,7 @@ def embed_file():
     with open("D:/AI_Research_Agent/TOOLS/RAG_setup/documents.txt") as f:
         text=f.read()
 
-    chunk=text.split("\n\n\n")
+    chunk=text.split("\n\n")
 
     return Chroma.from_texts(
         embedding=embedding,
@@ -26,7 +26,10 @@ def embed_file():
 def similarity_search(prompt):
     vector_db=embed_file()
     retriever=vector_db.as_retriever()
-    context=retriever.invoke(prompt)
-    return context[0]
+    result=retriever.invoke(prompt)
+    data=[]
+    [data.append(chunk.page_content) for chunk in result[0:2]]
+    return data
 
-# print(similarity_search("apa saja fitur yang dimiliki oleh toko pro"))
+# prompt=input("Prompt: ")
+# print(similarity_search(prompt))

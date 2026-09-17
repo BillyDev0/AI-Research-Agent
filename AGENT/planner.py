@@ -61,6 +61,12 @@ Pilih tool berdasarkan deskripsi tool dan kebutuhan setiap step.
 - Jika informasi membutuhkan internet, gunakan tool yang menyediakan pencarian internet.
 - Jangan membuat nama tool baru.
 
+# ATURAN MENJAGA JENIS PERTANYAAN
+Sebelum menulis query, cek: apakah GOAL_USER menanyakan NILAI/ANGKA SPESIFIK (kata seperti "berapa", "batas", "minimal", "maksimal", "jumlah")? Jika ya, query WAJIB tetap fokus mencari ANGKA/NILAI tersebut — JANGAN diubah jadi pertanyaan definisi/pengertian umum. 
+
+Contoh yang SALAH: goal "berapa batas minimal X" → query "cari definisi X" (ini mengubah dari nyari NILAI jadi nyari PENGERTIAN, beda maksud).
+Contoh yang BENAR: goal "berapa batas minimal X" → query "cari batas minimal X" (kata kunci nilai yang diminta dipertahankan).
+
 # ATURAN WAJIB UNTUK QUERY
 1. SATU STEP = SATU AKSI, SATU OBJEK, TANPA SYARAT GANDA.
 2. Query WAJIB berupa kalimat PERINTAH (imperative command), bukan deskriptif/naratif/penjelasan.

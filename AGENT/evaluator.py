@@ -22,65 +22,35 @@ class Scema_output(BaseModel):
  
 structured_output=model.with_structured_output(Scema_output) 
  
-template = """ 
-# ROLE 
-Kamu adalah Evaluator Agent. Tugasmu mengecek apakah DATA_INFORMASI sudah cukup untuk menjawab GOAL_USER, dan mencari data tambahan jika masih kurang. 
- 
-GOAL_USER: 
-{goal_user} 
- 
-RIWAYAT_QUERY: 
-{riwayat_query} 
- 
-DAFTAR_TOOLS: 
-{daftar_tools} 
- 
-DATA_INFORMASI (hasil pencarian, BISA MENGANDUNG DATA TIDAK RELEVAN): 
-{jawaban} 
- 
-# LANGKAH 1: BUANG SAMPAH 
-Baca DATA_INFORMASI, abaikan/buang total bagian yang TIDAK membahas topik/barang yang disebut di GOAL_USER (produk lain, iklan, artikel tidak nyambung, dll). Sisakan hanya bagian yang benar-benar tentang topik di GOAL_USER. Jangan pernah menyebut atau menggunakan isi yang sudah dibuang ini di langkah manapun setelah ini. 
-aca GOAL_USER dan identifikasi SEMUA syarat yang disebutkan di dalamnya — bisa berupa: nama barang/topik utama, DAN/ATAU syarat tambahan seperti negara, wilayah, tahun, jangka waktu, kategori, jumlah, kondisi, atau batasan lain apa pun yang tertulis di GOAL_USER. 
- 
-# LANGKAH 2: BANDINGKAN DENGAN GOAL_USER 
-Baca sisa data (yang sudah bersih) dengan santai, seperti manusia membaca artikel biasa. Tanyakan: "Apakah semua yang diminta di GOAL_USER sudah terjawab oleh data ini?" Fokus HANYA pada apa yang secara harfiah diminta GOAL_USER — jangan mempertimbangkan informasi tambahan yang tidak diminta. 
- 
-# LANGKAH 3: VALIDASI STATUS 
-Pilih "complete" JIKA: 
-- Semua hal yang diminta GOAL_USER sudah terjawab oleh data bersih (walau kalimatnya tidak persis sama seperti di GOAL_USER, cukup maknanya sama), ATAU 
-- Ada bagian yang sudah dicoba dicari (ada di RIWAYAT_QUERY) tapi tetap tidak ditemukan — anggap itu "tidak tersedia", bukan alasan mencari lagi. 
- 
-Pilih "incomplete" JIKA: 
-- Ada bagian yang SECARA EKSPLISIT diminta GOAL_USER, BENAR-BENAR TIDAK ADA sama sekali di data bersih, DAN belum pernah dicoba dicari di RIWAYAT_QUERY. 
- 
-sebelum menghasilkan status "complete" harus dipastikan mencari entitas secara maksimal (bukan hanya mengandalkan data bersih). 
- 
-# LANGKAH 4: VALIDASI QUERY (HANYA JIKA STATUS "incomplete") 
-Sebelum menulis query, cek satu per satu: 
-- Apakah query ini HANYA menyebut nama barang/topik yang PERSIS SAMA dengan yang ada di GOAL_USER? (dilarang mengganti/menambah nama lain, walau sejenis/semerek) 
-- Apakah query ini HANYA mencari 1 jenis data yang SECARA HARFIAH diminta GOAL_USER? (dilarang mencari hal lain yang terasa relevan tapi tidak diminta) 
-- Apakah query ini BEDA maknanya dari semua RIWAYAT_QUERY? 
-- Apakah query ini singkat (maksimal 10 kata) dan berbentuk perintah? 
- 
-Jika salah satu jawaban di atas "tidak", perbaiki dulu query sebelum dijadikan output. Jika status "complete", tools dan query dikosongkan. 
- 
-# PEMILIHAN TOOLS 
- 
-Pilih tool berdasarkan deskripsi tool dan kebutuhan setiap step. 
- 
-- Gunakan tool yang sumber datanya paling sesuai dengan informasi yang diminta. 
-- Jangan memilih tool hanya berdasarkan nama. 
-- Jika informasi yang diminta berasal dari dokumen internal, gunakan tool yang menyediakan akses ke dokumen internal. 
-- Jika informasi membutuhkan internet, gunakan tool yang menyediakan pencarian internet. 
-- Jangan membuat nama tool baru. 
- 
-# FORMAT OUTPUT (WAJIB, JSON, TANPA TEKS LAIN) 
-{{ 
-    "status": "...", 
-    "tools": "...", 
-    "query": "..." 
-}} 
-""" 
+template = """
+# ROLE
+Kamu Evaluator Agent. Cek apakah DATA_INFORMASI cukup untuk GOAL_USER, cari tambahan jika kurang.
+
+GOAL_USER: {goal_user}
+RIWAYAT_QUERY: {riwayat_query}
+DAFTAR_TOOLS: {daftar_tools}
+DATA_INFORMASI: {jawaban}
+
+# LANGKAH 1: BUANG SAMPAH
+Buang bagian DATA_INFORMASI yang tidak membahas topik/syarat di GOAL_USER (produk lain, iklan, tidak relevan). Syarat mencakup: nama barang/topik, negara/wilayah, tahun, kategori, jumlah, atau batasan lain yang tertulis di GOAL_USER. Sisakan hanya yang relevan; jangan gunakan bagian yang dibuang di langkah selanjutnya.
+
+# LANGKAH 2: BANDINGKAN DENGAN GOAL_USER
+Baca sisa data secara wajar (bukan cocokkan kata per kata). Tanyakan: apakah semua yang diminta GOAL_USER sudah terjawab? Fokus hanya pada yang secara harfiah diminta, jangan mempertimbangkan info tambahan yang tidak diminta.
+
+# LANGKAH 3: VALIDASI STATUS
+"complete" jika: semua yang diminta sudah terjawab (makna sama walau beda kata), ATAU sudah pernah dicari (ada di RIWAYAT_QUERY) tapi tetap tidak ketemu (anggap tidak tersedia, jangan cari lagi).
+"incomplete" jika: ada yang secara eksplisit diminta GOAL_USER, benar-benar tidak ada di data, DAN belum pernah dicoba di RIWAYAT_QUERY.
+Pastikan sudah mencari secara maksimal sebelum memilih "complete".
+
+# LANGKAH 4: VALIDASI QUERY (jika "incomplete")
+Cek: query hanya sebut nama/topik PERSIS sama dengan GOAL_USER (jangan ganti/tambah entitas lain); hanya cari 1 jenis data yang harfiah diminta; beda makna dari semua RIWAYAT_QUERY; maksimal 10 kata, bentuk perintah. Jika status "complete", tools dan query dikosongkan.
+
+# PEMILIHAN TOOLS
+Pilih tool sesuai sumber data yang dibutuhkan, bukan berdasarkan nama. Info dari dokumen internal → tool akses dokumen internal. Info butuh internet → tool pencarian internet. Jangan buat nama tool baru.
+
+# OUTPUT (JSON SAJA, TANPA TEKS LAIN)
+{{"status": "...", "tools": "...", "query": "..."}}
+"""
  
 def executor(plan): 
     jawaban=[] 
@@ -93,13 +63,12 @@ def executor(plan):
         query=data['query'] 
         if "web_search" == tools: 
             result=web_search(query) 
-            riwayat_query.append(query) 
-             
             [jawaban.append(results['content']) for results in result]  
  
         elif "rag_search" in tools: 
             result=similarity_search(query) 
-            jawaban.append(result.page_content) 
+            [jawaban.append(chunk) for chunk in result] 
+            riwayat_query.append(query) 
              
  
     return jawaban,goal_user,riwayat_query 
